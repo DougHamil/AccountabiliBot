@@ -9,14 +9,17 @@ fs = require 'fs'
 
 nlp = new NLP()
 sunlight = new SunlightClient(process.argv[2])
-reddit = new Reddit(process.argv[3], process.argv[4])
+reddit = new Reddit()
 botDatabase = new BotDatabase()
 
 TEST_URL = "http://motherboard.vice.com/read/meet-marsha-blackburn-big-telecoms-best-friend-in-congress"
 
+postComment = (post, comment, cb) ->
+  reddit.comment post.name, comment, cb
+
 processPost = (post, cb) ->
   url = post.url
-  botDatabase.hasPosted post.id, (err, hasPosted) ->
+  botDatabase.hasPosted post, (err, hasPosted) ->
     if err?
       cb err
     else
@@ -24,20 +27,40 @@ processPost = (post, cb) ->
         console.log "SKIPPING: #{post.title}"
         cb null
       else
-        console.log "PROCESSING: #{post.title}"
-        botDatabase.markPosted post.id, (err) ->
+        # Double check by hitting reddit
+        reddit.hasComment post.subreddit, post.id, (err, hasComment) ->
           if err?
             cb err
           else
-            readPost(post.url, cb)
+            botDatabase.markPosted post, (err) ->
+              if err?
+                cb err
+              else
+                if hasComment
+                  console.log "SKIPPING: #{post.title}"
+                  cb null
+                else
+                  console.log "PROCESSING: #{post.title}"
+                  readPost post.url, (err, comment) ->
+                    if err?
+                      cb err
+                    else
+                      if comment?
+                        console.log "POSTING COMMENT: #{post.title}"
+                        postComment post, comment, cb
+                      else
+                        cb err, comment
 
 readPost = (url, cb) ->
+  comment = null
   nlp.entities url, (err, entities) ->
     if err?
       cb err
     procEntity = ->
       if entities.length == 0
-        cb()
+        if comment?
+          comment += "\n"+reddit.creditsMarkdown()
+        cb null, comment
         return
       entity = entities.pop()
       if entity.type is 'Person'
@@ -56,8 +79,18 @@ readPost = (url, cb) ->
               else
                 start = moment().subtract('years',1).startOf('year').subtract('days', 1)
                 end = moment()
-                str = moment().subtract('years', 1).format('YYYY') + ' - ' + moment().format('YYYY')
-                fs.writeFileSync l.bioguide_id+'.md', reddit.contributionsToMarkdown(str, start, end, contribs)
+                str = moment().subtract('years', 1).format('YYYY') + ' to Date'
+                # Only generate markdown if there were contributions
+                if contribs.total(start, end) > 0
+                  if not comment?
+                    comment = ""
+                  else
+                    comment += "\n*****\n"
+                  markDown = reddit.contributionsToMarkdown(str, start, end, contribs)
+                  comment += markDown
+                else
+                  console.log "Total contributions is $0:"
+                  console.log contribs
                 procEntity()
           else
             procEntity()
@@ -75,8 +108,11 @@ onInitialized = ->
       async.eachSeries posts, processPost, (err) ->
         if err?
           console.log err
+        else
+          console.log "Done. Waiting 10 seconds before retrying..."
+          setTimeout onInitialized, 10000
 
-async.series [botDatabase.init.bind(botDatabase), botDatabase.clearAllPostsBefore.bind(botDatabase, moment().subtract('weeks', 2))], (err) ->
+async.series [botDatabase.init.bind(botDatabase), botDatabase.clearAllPostsBefore.bind(botDatabase, moment().subtract('weeks', 2)), reddit.init.bind(reddit)], (err) ->
   if err?
     console.log err
   else

@@ -34,7 +34,7 @@ class Contributions
     # Denormalize
     @categories = @_indexAmountByProperty 'contributor_category', (c) -> CONTRIBUTOR_CATEGORIES[c]
     @organizations = @_indexAmountByProperty('organization_name')
-    @totalContributions = (@_data.map (c) -> parseFloat(c.amount)).reduce (t, s) -> t + s
+    #@totalContributions = (@_data.map (c) -> parseFloat(c.amount)).reduce (t, s) -> t + s
 
   topCategories: (n, bdate, edate) ->
     cats = {}
@@ -90,18 +90,40 @@ class Client
   constructor:(@_key) ->
 
   searchForLegislatorByName: (first, last, cb) ->
+    # Try first and last name
     url = ROOT_URL + "legislators?apikey=#{@_key}&first_name=#{encodeURIComponent(first)}&last_name=#{encodeURIComponent(last)}"
-    request {url:url, json:true}, (err, resp, body) ->
-      if body.results? and body.results.length > 0
-        cb err, body.results[0]
+    request {url:url, json:true}, (err, resp, body) =>
+      if err?
+        cb err
       else
-        cb new Error("Legislator not found for #{first} #{last}")
+        if body.results? and body.results.length > 0
+          cb err, body.results[0]
+        else
+          # Try nickname and lastname
+          url = ROOT_URL + "legislators?apikey=#{@_key}&nickname=#{encodeURIComponent(first)}&last_name=#{encodeURIComponent(last)}"
+          request {url:url, json:true}, (err, resp, body) =>
+            if err?
+              cb err
+            else
+              if body.results? and body.results.length > 0
+                cb err, body.results[0]
+              else
+                cb new Error("Legislator not found for #{first} #{last}")
 
   getContributionsForLegislator:(leg, cb) ->
     url = TRAN_URL + "contributions.json?apikey=#{@_key}&recipient_ft=#{encodeURIComponent(leg.first_name+' '+leg.last_name)}"
     request {url:url, json:true}, (err, resp, body) =>
       if not err?
-        cb err, new Contributions(leg, body)
+        if body.length > 0
+          cb err, new Contributions(leg, body)
+        else
+          # Search by Nick name
+          url = TRAN_URL + "contributions.json?apikey=#{@_key}&recipient_ft=#{encodeURIComponent(leg.nickname+' '+leg.last_name)}"
+          request {url:url, json:true}, (err, resp, body) =>
+            if err?
+              cb err, body
+            else
+              cb err, new Contributions(leg, body)
       else
         cb err, body
 

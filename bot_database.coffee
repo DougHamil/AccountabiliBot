@@ -43,7 +43,7 @@ class Database
       @_db.run "INSERT OR REPLACE INTO #{POST_TABLE_NAME} (post_id, has_posted) VALUES (?, 0)", [postId], cb
 
   idForPost:(post) ->
-    return post.id + "_" + post.subreddit_id
+    return post.name
 
   _initPostTable: (cb) ->
     @_db.serialize =>
