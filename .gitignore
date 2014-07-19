@@ -4,3 +4,4 @@ bot.db
 api_key.txt
 **/*.swp
 *.md
+run.sh
