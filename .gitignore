@@ -1,0 +1,6 @@
+node_modules/
+alchemyapi_node/
+bot.db
+api_key.txt
+**/*.swp
+*.md
