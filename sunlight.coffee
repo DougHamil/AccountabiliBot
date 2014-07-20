@@ -27,7 +27,7 @@ for line in lines
   for col in cols
     col = col.replace /"/g, ''
     row.push col
-  CONTRIBUTOR_CATEGORIES[row[1]] = row[2] + " -> " + row[3]
+  CONTRIBUTOR_CATEGORIES[row[1]] = row[3] + ": " + row[2]
 
 class Contributions
   constructor: (@legislator, @_data) ->
@@ -108,7 +108,7 @@ class Client
               if body.results? and body.results.length > 0
                 cb err, body.results[0]
               else
-                cb new Error("Legislator not found for #{first} #{last}")
+                cb null, null
 
   getContributionsForLegislator:(leg, cb) ->
     url = TRAN_URL + "contributions.json?apikey=#{@_key}&recipient_ft=#{encodeURIComponent(leg.first_name+' '+leg.last_name)}"
@@ -122,8 +122,10 @@ class Client
           request {url:url, json:true}, (err, resp, body) =>
             if err?
               cb err, body
-            else
+            else if body.length > 0
               cb err, new Contributions(leg, body)
+            else
+              cb err, null
       else
         cb err, body
 
