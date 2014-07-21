@@ -4,11 +4,23 @@ moment = require 'moment'
 
 TIMEOUT = 60000
 
+# Tags corresponding to disambiguation from Alchemy API
+POL_TAGS = ['Politician', 'OfficeHolder', 'U.S.Congressperson']
+
 class Bot
   constructor:(@topOrgsOnly, @topOrgsCount, @testRun, @subreddits, @reddit, @sunlight, @nlp, @database) ->
 
+  _tagsContains: (tags) ->
+    if not tags?
+      return false
+    for t in POL_TAGS
+      if t in tags
+        return true
+    return false
+
   _buildCommentForEntity: (entity, cb) ->
-    if entity.type is 'Person'
+    dis = entity.disambiguated
+    if entity.type is 'Person' and dis? and @_tagsContains(dis.subType)
       name = if entity.disambiguated? then entity.disambiguated.name else entity.text
       names = name.split(' ')
       names = names.filter (n) -> n.indexOf('.') == -1
@@ -16,6 +28,7 @@ class Bot
         names.splice(1,1)
       first_name = names[0]
       last_name = names[names.length - 1]
+      console.log "Searching for #{first_name} #{last_name} (#{name})"
       @sunlight.searchForLegislatorByName first_name, last_name, (err, l) =>
         if err? or not l?
           cb err
@@ -64,7 +77,7 @@ class Bot
                   combinedComment += "\n*****\n"
                   combinedComment += comment
                   # Ignore if too big
-                  if combinedComment.length >= 1000
+                  if combinedComment.length >= 10000
                     combinedComment = old
                 else
                   combinedComment = comment

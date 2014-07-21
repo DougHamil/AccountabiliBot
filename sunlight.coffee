@@ -4,9 +4,12 @@ request = require 'request'
 #csv = require 'csv'
 fs = require 'fs'
 moment = require 'moment'
+natural = require 'natural'
 
 ROOT_URL = 'http://congress.api.sunlightfoundation.com/'
 TRAN_URL = 'http://transparencydata.com/api/1.0/'
+
+FUZZY_MATCH_THRESHOLD = 0.7
 
 Number::formatMoney = (t=',', d='.', c='$') ->
   n = this
@@ -89,26 +92,46 @@ class Contributions
 class Client
   constructor:(@_key) ->
 
+  findBestMatch: (first, last, results) ->
+    if results.length == 0
+      return null
+
+    withScores = []
+    # Search by First Name
+    for r in results
+      dist = natural.JaroWinklerDistance first, r.first_name
+      withScores.push {result:r,score:dist}
+    withScores.sort (a, b) -> a.score - b.score
+    best = withScores[0]
+    if best.score >= FUZZY_MATCH_THRESHOLD
+      return best.result
+    else
+      console.log "Not best match:"
+      console.log best
+      withScores = []
+      # Search by nick name
+      for r in results
+        if r.nickname?
+          dist = natural.JaroWinklerDistance first, r.nickname
+          withScores.push {result:r, score:dist}
+      if withScores.length > 0
+        withScores.sort (a, b) -> a.score - b.score
+        best = withScores[0]
+        if best.score >= FUZZY_MATCH_THRESHOLD
+          return best.result
+    return null
+
   searchForLegislatorByName: (first, last, cb) ->
-    # Try first and last name
-    url = ROOT_URL + "legislators?apikey=#{@_key}&first_name=#{encodeURIComponent(first)}&last_name=#{encodeURIComponent(last)}"
+    # Search only by last name
+    url = ROOT_URL + "legislators?apikey=#{@_key}&last_name=#{encodeURIComponent(last)}"
     request {url:url, json:true}, (err, resp, body) =>
       if err?
         cb err
       else
         if body.results? and body.results.length > 0
-          cb err, body.results[0]
+          cb err, @findBestMatch(first, last, body.results)
         else
-          # Try nickname and lastname
-          url = ROOT_URL + "legislators?apikey=#{@_key}&nickname=#{encodeURIComponent(first)}&last_name=#{encodeURIComponent(last)}"
-          request {url:url, json:true}, (err, resp, body) =>
-            if err?
-              cb err
-            else
-              if body.results? and body.results.length > 0
-                cb err, body.results[0]
-              else
-                cb null, null
+          cb null, null
 
   getEntityIdForLegislator: (leg, cb) ->
     url = TRAN_URL + "entities/id_lookup.json?namespace=urn%3Acrp%3Arecipient&id=#{leg.crp_id}&apikey=#{@_key}"
