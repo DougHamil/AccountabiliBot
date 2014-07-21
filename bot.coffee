@@ -68,7 +68,10 @@ class Bot
                     combinedComment = old
                 else
                   combinedComment = comment
-            cb err, combinedComment +"\n"+ @reddit.creditsMarkdown()
+            if combinedComment?
+              combinedComment += "\n"
+              combinedComment += @reddit.creditsMarkdown()
+            cb err, combinedComment
 
   _processPost: (post, cb) ->
     @database.hasPosted post, (err, hasPosted) =>
@@ -114,7 +117,7 @@ class Bot
                           cb err, comment
 
   _handleSubreddit: (sub, cb) ->
-    @reddit.r(sub).new().call (err, listing) =>
+    @reddit.r(sub).hot().call (err, listing) =>
       if err?
         cb err
       else

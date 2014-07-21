@@ -1,7 +1,7 @@
 # Client for Sunlight Foundation API
 
 request = require 'request'
-csv = require 'csv'
+#csv = require 'csv'
 fs = require 'fs'
 moment = require 'moment'
 
@@ -19,6 +19,7 @@ Number::formatMoney = (t=',', d='.', c='$') ->
   return s + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t)
 
 CONTRIBUTOR_CATEGORIES = {}
+###
 catcodes = fs.readFileSync('catcodes.csv', 'utf8')
 lines = catcodes.split('\n')
 for line in lines
@@ -28,6 +29,7 @@ for line in lines
     col = col.replace /"/g, ''
     row.push col
   CONTRIBUTOR_CATEGORIES[row[1]] = row[3] + ": " + row[2]
+###
 
 class Contributions
   constructor: (@legislator, @_data) ->

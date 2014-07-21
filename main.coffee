@@ -7,9 +7,9 @@ async = require 'async'
 moment = require 'moment'
 fs = require 'fs'
 
-SUBREDDITS = ['stand', 'Technology', 'accountabili_bot', 'CISPA', 'FuturistParty', 'progressive', 'moderatepolitics', 'Corruption', 'lobbyists', 'government', 'Boise','maydaypac']
-TEST_RUN = false
-TOP_ORGS_ONLY = true
+SUBREDDITS = ['stand', 'Technology', 'accountabili_bot', 'CISPA', 'FuturistParty', 'moderatepolitics', 'Corruption', 'lobbyists', 'government', 'Boise','maydaypac']
+TEST_RUN = true
+TOP_ORGS_ONLY = true # Report on top contributing organizations using Sunlight API
 TOP_COUNT = 10
 
 nlp = new NLP()

@@ -101,7 +101,7 @@ class Reddit
     idx = 1
     total = 0
     for org in c.data
-      str += "\n#{idx}. #{org.name}|#{org.total_amount.formatMoney()}"
+      str += "\n#{idx}. #{org.name}|#{parseFloat(org.total_amount).formatMoney()}"
       total += parseFloat(org.total_amount)
       idx++
     str += """\n
