@@ -84,8 +84,6 @@ class Contributions
       catch err
     return map
 
-  _parseCategoryCodes: ->
-
 class Client
   constructor:(@_key) ->
 
@@ -109,6 +107,26 @@ class Client
                 cb err, body.results[0]
               else
                 cb null, null
+
+  getEntityIdForLegislator: (leg, cb) ->
+    url = TRAN_URL + "entities/id_lookup.json?namespace=urn%3Acrp%3Arecipient&id=#{leg.crp_id}&apikey=#{@_key}"
+    request {url:url, json:true}, (err, resp, body) =>
+      if not err? and body.length > 0
+        cb err, body[0].id
+      else
+        cb err, null
+
+  getTopContributionsForLegislator:(leg, count, cb) ->
+    @getEntityIdForLegislator leg, (err, entityId) =>
+      if err? or not entityId?
+        cb err, null
+      else
+        url = TRAN_URL + "aggregates/pol/#{entityId}/contributors.json?limit=#{count}&apikey=#{@_key}"
+        request {url:url, json:true}, (err, resp, body) =>
+          if not err?
+            cb err, {legislator:leg, data:body}
+          else
+            cb err, body
 
   getContributionsForLegislator:(leg, cb) ->
     url = TRAN_URL + "contributions.json?apikey=#{@_key}&recipient_ft=#{encodeURIComponent(leg.first_name+' '+leg.last_name)}"

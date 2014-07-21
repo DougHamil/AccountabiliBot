@@ -9,13 +9,15 @@ fs = require 'fs'
 
 SUBREDDITS = ['stand', 'Technology', 'accountabili_bot', 'CISPA', 'FuturistParty', 'progressive', 'moderatepolitics', 'Corruption', 'lobbyists', 'government', 'Boise','maydaypac']
 TEST_RUN = false
+TOP_ORGS_ONLY = true
+TOP_COUNT = 10
 
 nlp = new NLP()
 sunlight = new SunlightClient(process.argv[2])
 reddit = new Reddit()
 botDatabase = new BotDatabase()
 
-bot = new Bot TEST_RUN, SUBREDDITS, reddit, sunlight, nlp, botDatabase
+bot = new Bot TOP_ORGS_ONLY, TOP_COUNT, TEST_RUN, SUBREDDITS, reddit, sunlight, nlp, botDatabase
 
 onInitialized = ->
 #processPost {url:TEST_URL, title:"TEST"}

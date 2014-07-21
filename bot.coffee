@@ -5,7 +5,7 @@ moment = require 'moment'
 TIMEOUT = 60000
 
 class Bot
-  constructor:(@testRun, @subreddits, @reddit, @sunlight, @nlp, @database) ->
+  constructor:(@topOrgsOnly, @topOrgsCount, @testRun, @subreddits, @reddit, @sunlight, @nlp, @database) ->
 
   _buildCommentForEntity: (entity, cb) ->
     if entity.type is 'Person'
@@ -20,18 +20,30 @@ class Bot
         if err? or not l?
           cb err
         else
-          @sunlight.getContributionsForLegislator l, (err, contribs) =>
-            if err? or not contribs?
-              cb err
-            else
-              start = moment().subtract('years',1).startOf('year').subtract('days', 1)
-              end = moment()
-              str = moment().subtract('years', 1).format('YYYY') + ' to Date'
-              # Only generate markdown if there were contributions
-              if contribs.total(start, end) > 0
-                cb null, @reddit.contributionsToMarkdown(str, start, end, contribs)
+          if @topOrgsOnly
+            @sunlight.getTopContributionsForLegislator l, @topOrgsCount, (err, contribs) =>
+              if err? or not contribs?
+                cb err
               else
-                cb null, null
+                str = "Career"
+                # Only generate comment if there is data
+                if contribs.data.length > 0
+                  cb null, @reddit.topContributionsToMarkdown(str, contribs)
+                else
+                  cb null, null
+          else
+            @sunlight.getContributionsForLegislator l, (err, contribs) =>
+              if err? or not contribs?
+                cb err
+              else
+                start = moment().subtract('years',1).startOf('year').subtract('days', 1)
+                end = moment()
+                str = moment().subtract('years', 1).format('YYYY') + ' to Date'
+                # Only generate markdown if there were contributions
+                if contribs.total(start, end) > 0
+                  cb null, @reddit.contributionsToMarkdown(str, start, end, contribs)
+                else
+                  cb null, null
     else
       cb null, null
 
@@ -56,7 +68,7 @@ class Bot
                     combinedComment = old
                 else
                   combinedComment = comment
-            cb err, combinedComment
+            cb err, combinedComment +"\n"+ @reddit.creditsMarkdown()
 
   _processPost: (post, cb) ->
     @database.hasPosted post, (err, hasPosted) =>
