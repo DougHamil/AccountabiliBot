@@ -1,0 +1,25 @@
+{
+  "name": "AccountabiliBot",
+  "version": "0.0.0",
+  "description": "Reddit bot for political contribution tracking.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DougHamil/AccountabiliBot.git"
+  },
+  "author": "Doug",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/DougHamil/AccountabiliBot/issues"
+  },
+  "dependencies": {
+    "coffee-script": "~1.7.1",
+    "raw.js": "~0.1.8",
+    "moment": "~2.7.0",
+    "sqlite3": "~2.2.4",
+    "csv": "~0.4.0"
+  }
+}
