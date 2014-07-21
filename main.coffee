@@ -37,8 +37,8 @@ async.series [botDatabase.init.bind(botDatabase), botDatabase.clearAllPostsBefor
   if err?
     console.log err
   else
-    botDatabase.markUnposted {name:'t3_2asmb9'}, (err) ->
-      # Launch the bot and handle any errors
-      bot.run (err) ->
-        if err?
-          console.log err
+    # Launch the bot and handle any errors
+    bot.run (err) ->
+      if err?
+        console.log err
+      process.exit(1)
