@@ -117,7 +117,7 @@ class Bot
                           cb err, comment
 
   _handleSubreddit: (sub, cb) ->
-    @reddit.r(sub).hot().call (err, listing) =>
+    @reddit.r(sub).new().call (err, listing) =>
       if err?
         cb err
       else
